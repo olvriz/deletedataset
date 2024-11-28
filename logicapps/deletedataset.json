@@ -1,0 +1,325 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Condition": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "@variables('approver_response')",
+                                "Yes"
+                            ]
+                        }
+                    ]
+                },
+                "actions": {
+                    "LeaderApprovation": {
+                        "type": "ApiConnectionWebhook",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "teams-1"
+                                }
+                            },
+                            "body": {
+                                "notificationUrl": "@{listCallbackUrl()}",
+                                "body": {
+                                    "messageBody": "{\n    \"type\": \"AdaptiveCard\",\n    \"body\": [\n        {\n            \"type\": \"TextBlock\",\n            \"size\": \"ExtraLarge\",\n            \"weight\": \"Bolder\",\n            \"text\": \"Deleção de dados DataLake Prod\",\n            \"style\": \"heading\",\n            \"horizontalAlignment\": \"Center\",\n            \"fontType\": \"Default\",\n            \"color\": \"Good\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"O Usuário @{body('Get_response_details_2')?['responder']}, da tribo @{body('Get_response_details_2')?['r7368897b973f4d25833da22bad024b43']}, está solicitando a exclusão dos dados dentro do path: (@{body('Get_response_details_2')?['r52d620682b724c00bda2cea9cec16fe4']}/@{body('Get_response_details_2')?['re68a55c12021418cbba488c939fc648e']}/@{body('Get_response_details_2')?['rd626be2ba1724afda54bf7da99535dd1']}/@{body('Get_response_details_2')?['r452d3738dbd94a1dbee43caee18a185d']}/@{body('Get_response_details_2')?['r3a4087f465664314817cf1889352e548']}) !\",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"columnHeader\",\n            \"weight\": \"Lighter\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"Você autoriza a exclusão desse path?\",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"heading\",\n            \"weight\": \"Bolder\",\n            \"horizontalAlignment\": \"Center\",\n            \"color\": \"Attention\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"ATENÇÃO: Após clicar em \\\"Autorizo\\\" o path será excluido imediatamente! \",\n            \"wrap\": true,\n            \"color\": \"Warning\"\n        },\n        {\n            \"type\": \"ActionSet\",\n            \"actions\": [\n                {\n                    \"type\": \"Action.Submit\",\n                    \"title\": \"Autorizo\",\n                    \"id\": \"Yes\",\n                    \"iconUrl\": \"https://cdn-icons-png.flaticon.com/128/6459/6459980.png\",\n                    \"style\": \"positive\"\n                },\n                {\n                    \"type\": \"Action.Submit\",\n                    \"title\": \"Recuso\",\n                    \"id\": \"No\",\n                    \"iconUrl\": \"https://cdn-icons-png.flaticon.com/128/6467/6467134.png\",\n                    \"style\": \"destructive\"\n                }\n            ],\n            \"horizontalAlignment\": \"Center\"\n        }\n    ],\n    \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n    \"version\": \"1.4\"\n}",
+                                    "updateMessage": "Thanks for your response!",
+                                    "recipient": {
+                                        "to": "@body('Get_a_row')?['Email']"
+                                    }
+                                }
+                            },
+                            "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}/$subscriptions"
+                        },
+                        "limit": {
+                            "timeout": "P1D"
+                        }
+                    },
+                    "LeaderApproved": {
+                        "type": "If",
+                        "expression": {
+                            "and": [
+                                {
+                                    "not": {
+                                        "equals": [
+                                            "@outputs('UserApprovation')['body']['submitActionId']",
+                                            "No"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        "actions": {
+                            "POST_ADB_PARAMETERS": {
+                                "type": "Http",
+                                "inputs": {
+                                    "uri": "", ##PLACE HERE YOUR ADB WORKSPACE / OR WORKFLOW
+                                    "method": "POST",
+                                    "headers": {
+                                        "Authorization": "" ## Use your bearer token
+                                    },
+                                    "body": "@variables('bodyrequest')"
+                                },
+                                "runAfter": {
+                                    "Delay": [
+                                        "SUCCEEDED"
+                                    ]
+                                }
+                            },
+                            "LeaderApprovedFeedback": {
+                                "type": "ApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "referenceName": "teams-1"
+                                        }
+                                    },
+                                    "method": "post",
+                                    "body": {
+                                        "recipient": "@body('Get_response_details_2')?['responder']",
+                                        "messageBody": "{\n    \"type\": \"AdaptiveCard\",\n    \"body\": [\n        {\n            \"type\": \"TextBlock\",\n            \"size\": \"ExtraLarge\",\n            \"weight\": \"Bolder\",\n            \"text\": \"Deleção de dados DataLake Prod\",\n            \"style\": \"heading\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"A sua solicitação para excluir os dados do path (@{body('Get_response_details_2')?['r52d620682b724c00bda2cea9cec16fe4']}/@{body('Get_response_details_2')?['re68a55c12021418cbba488c939fc648e']}/@{body('Get_response_details_2')?['rd626be2ba1724afda54bf7da99535dd1']}/@{body('Get_response_details_2')?['r452d3738dbd94a1dbee43caee18a185d']}/@{body('Get_response_details_2')?['r3a4087f465664314817cf1889352e548']}), no ambiente de produção e foi: \",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"columnHeader\",\n            \"weight\": \"Lighter\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"Aprovada ✅\",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"heading\",\n            \"weight\": \"Bolder\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"A deleção está sendo executada, assim que concluir você receberá uma nova mensagem informando o status! :) \",\n            \"wrap\": true\n        },\n        {\n            \"type\": \"ActionSet\",\n            \"horizontalAlignment\": \"Center\"\n        }\n    ],\n    \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n    \"version\": \"1.4\"\n}"
+                                    },
+                                    "path": "/v1.0/teams/conversation/adaptivecard/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}"
+                                },
+                                "runAfter": {
+                                    "POST_ADB_PARAMETERS": [
+                                        "SUCCEEDED"
+                                    ]
+                                }
+                            },
+                            "Delay": {
+                                "type": "Wait",
+                                "inputs": {
+                                    "interval": {
+                                        "count": 24,
+                                        "unit": "Hour"
+                                    }
+                                }
+                            }
+                        },
+                        "else": {
+                            "actions": {
+                                "LeaderRecusedFeedback": {
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "host": {
+                                            "connection": {
+                                                "referenceName": "teams-1"
+                                            }
+                                        },
+                                        "method": "post",
+                                        "body": {
+                                            "recipient": "@body('Get_response_details_2')?['responder']",
+                                            "messageBody": "{\n    \"type\": \"AdaptiveCard\",\n    \"body\": [\n        {\n            \"type\": \"TextBlock\",\n            \"size\": \"ExtraLarge\",\n            \"weight\": \"Bolder\",\n            \"text\": \"Deleção de dados DataLake Prod\",\n            \"style\": \"heading\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"A sua solicitação para excluir os dados do path (@{body('Get_response_details_2')?['r52d620682b724c00bda2cea9cec16fe4']}/@{body('Get_response_details_2')?['re68a55c12021418cbba488c939fc648e']}/@{body('Get_response_details_2')?['rd626be2ba1724afda54bf7da99535dd1']}/@{body('Get_response_details_2')?['r452d3738dbd94a1dbee43caee18a185d']}/@{body('Get_response_details_2')?['r3a4087f465664314817cf1889352e548']}), no ambiente de produção foi: \",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"columnHeader\",\n            \"weight\": \"Lighter\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"Recusada ❌ / O aprovador da torre não autorizou essa deleção, favor entrar em contato com @{body('Get_response_details_2')?['r61dc412f0a8b417d82383f7f2c95eb81']}@{body('Get_response_details_2')?['r624df00bc55c4623aa796a7bb35374a6']}@{body('Get_response_details_2')?['r423d3042a58a45b58c6f0f97631274a6']}@{body('Get_response_details_2')?['r7442e79d55904fbfaf823b69031d65a6']}@{body('Get_response_details_2')?['rf0af08773a144a4887e28c461daaa783']}\",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"heading\",\n            \"weight\": \"Bolder\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"ActionSet\",\n            \"horizontalAlignment\": \"Center\"\n        }\n    ],\n    \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n    \"version\": \"1.4\"\n}"
+                                        },
+                                        "path": "/v1.0/teams/conversation/adaptivecard/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}"
+                                    }
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "LeaderApprovation": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "LeaderResponseTimeout": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "teams-1"
+                                }
+                            },
+                            "method": "post",
+                            "body": {
+                                "recipient": "@body('Get_response_details_2')?['responder']",
+                                "messageBody": "{\n    \"type\": \"AdaptiveCard\",\n    \"body\": [\n        {\n            \"type\": \"TextBlock\",\n            \"size\": \"ExtraLarge\",\n            \"weight\": \"Bolder\",\n            \"text\": \"Deleção de dados DataLake Prod\",\n            \"style\": \"heading\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"A sua solicitação para excluir os dados do path (@{body('Get_response_details_2')?['r52d620682b724c00bda2cea9cec16fe4']}/@{body('Get_response_details_2')?['re68a55c12021418cbba488c939fc648e']}/@{body('Get_response_details_2')?['rd626be2ba1724afda54bf7da99535dd1']}/@{body('Get_response_details_2')?['r452d3738dbd94a1dbee43caee18a185d']}/@{body('Get_response_details_2')?['r3a4087f465664314817cf1889352e548']}), no ambiente de produção foi: \",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"columnHeader\",\n            \"weight\": \"Lighter\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"Recusada ❌ / O Approvador da torre não respondeu a solicitação em 24 horas, ou não está disponível, por favor, informe o aprovador da sua torre e solicite novamente\",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"heading\",\n            \"weight\": \"Bolder\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"ActionSet\",\n            \"horizontalAlignment\": \"Center\"\n        }\n    ],\n    \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n    \"version\": \"1.4\"\n}"
+                            },
+                            "path": ""
+                        },
+                        "runAfter": {
+                            "LeaderApprovation": [
+                                "TIMEDOUT"
+                            ]
+                        }
+                    }
+                },
+                "else": {
+                    "actions": {
+                        "UserRecused": {
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "referenceName": "teams-1"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "recipient": "@body('Get_response_details_2')?['responder']",
+                                    "messageBody": "{\n    \"type\": \"AdaptiveCard\",\n    \"body\": [\n        {\n            \"type\": \"TextBlock\",\n            \"size\": \"ExtraLarge\",\n            \"weight\": \"Bolder\",\n            \"text\": \"Deleção de dados DataLake Prod\",\n            \"style\": \"heading\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"A sua solicitação para excluir os dados do path (@{body('Get_response_details_2')?['r52d620682b724c00bda2cea9cec16fe4']}/@{body('Get_response_details_2')?['re68a55c12021418cbba488c939fc648e']}/@{body('Get_response_details_2')?['rd626be2ba1724afda54bf7da99535dd1']}/@{body('Get_response_details_2')?['r452d3738dbd94a1dbee43caee18a185d']}/@{body('Get_response_details_2')?['r3a4087f465664314817cf1889352e548']}), no ambiente de produção foi: \",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"columnHeader\",\n            \"weight\": \"Lighter\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"Recusada ❌\",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"heading\",\n            \"weight\": \"Bolder\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"ActionSet\",\n            \"horizontalAlignment\": \"Center\"\n        }\n    ],\n    \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n    \"version\": \"1.4\"\n}"
+                                },
+                                "path": """
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "UserApprovationVar": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Get_a_row": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "excelonlinebusiness-1"
+                        }
+                    },
+                    "method": "get",
+                    "path": "",
+                    "queries": {
+                        "source": "",
+                        "idColumn": "Nome"
+                    }
+                },
+                "runAfter": {
+                    "Initialize_variable_2": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Get_response_details_2": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "microsoftforms-2"
+                        }
+                    },
+                    "method": "get",
+                    "path": "",
+                    "queries": {
+                        "response_id": "@triggerBody()?['resourceData']?['responseId']"
+                    }
+                },
+                "runAfter": {}
+            },
+            "Initialize_variable": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "bodyrequest",
+                            "type": "string",
+                            "value": ""
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Get_response_details_2": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_2": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "approver_name",
+                            "type": "string",
+                            "value": ""
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "UserApprovationVar": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "approver_response",
+                            "type": "string",
+                            "value": "@body('UserApprovation')?['submitActionId']"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "UserApprovation": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "UserApprovation": {
+                "type": "ApiConnectionWebhook",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "teams-1"
+                        }
+                    },
+                    "body": {
+                        "notificationUrl": "@{listCallbackUrl()}",
+                        "body": {
+                            "messageBody": "{\n    \"type\": \"AdaptiveCard\",\n    \"body\": [\n        {\n            \"type\": \"TextBlock\",\n            \"size\": \"ExtraLarge\",\n            \"weight\": \"Bolder\",\n            \"text\": \"Deleção de dados DataLake Prod\",\n            \"style\": \"heading\",\n            \"horizontalAlignment\": \"Center\",\n            \"fontType\": \"Default\",\n            \"color\": \"Good\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"Você está solicitando a exclusão dos dados dentro do path: (@{body('Get_response_details_2')?['r52d620682b724c00bda2cea9cec16fe4']}/@{body('Get_response_details_2')?['re68a55c12021418cbba488c939fc648e']}/@{body('Get_response_details_2')?['rd626be2ba1724afda54bf7da99535dd1']}/@{body('Get_response_details_2')?['r452d3738dbd94a1dbee43caee18a185d']}/@{body('Get_response_details_2')?['r3a4087f465664314817cf1889352e548']}) \",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"columnHeader\",\n            \"weight\": \"Lighter\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"Você confirma a exclusão desse path?\",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"heading\",\n            \"weight\": \"Bolder\",\n            \"horizontalAlignment\": \"Center\",\n            \"color\": \"Attention\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"ATENÇÃO: Após clicar em \\\"Autorizo\\\" o path será excluido imediatamente! \",\n            \"wrap\": true,\n            \"color\": \"Warning\"\n        },\n        {\n            \"type\": \"ActionSet\",\n            \"actions\": [\n                {\n                    \"type\": \"Action.Submit\",\n                    \"title\": \"Autorizo\",\n                    \"id\": \"Yes\",\n                    \"iconUrl\": \"https://cdn-icons-png.flaticon.com/128/6459/6459980.png\",\n                    \"style\": \"positive\"\n                },\n                {\n                    \"type\": \"Action.Submit\",\n                    \"title\": \"Recuso\",\n                    \"id\": \"No\",\n                    \"iconUrl\": \"https://cdn-icons-png.flaticon.com/128/6467/6467134.png\",\n                    \"style\": \"destructive\"\n                }\n            ],\n            \"horizontalAlignment\": \"Center\"\n        }\n    ],\n    \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n    \"version\": \"1.4\"\n}",
+                            "updateMessage": "Obrigado por manter nosso ambiente limpo! ",
+                            "recipient": {
+                                "to": "@body('Get_response_details_2')?['responder']"
+                            }
+                        }
+                    },
+                    "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}/$subscriptions"
+                },
+                "runAfter": {
+                    "Get_a_row": [
+                        "Succeeded"
+                    ]
+                },
+                "limit": {
+                    "timeout": "P1D"
+                }
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "When_a_new_response_is_submitted": {
+                "type": "ApiConnectionWebhook",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "microsoftforms-2"
+                        }
+                    },
+                    "body": {
+                        "eventType": "responseAdded",
+                        "notificationUrl": "@{listCallbackUrl()}",
+                        "source": "ms-connector"
+                    },
+                    "path": ""
+                },
+                "splitOn": "@triggerBody()?['value']"
+            }
+        }
+    },
+    "kind": "Stateful"
+}

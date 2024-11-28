@@ -1,0 +1,186 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Parse_JSON": {
+                "type": "ParseJson",
+                "inputs": {
+                    "content": "@triggerBody()",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "status": {
+                                "type": "string"
+                            },
+                            "message": {
+                                "type": "string"
+                            },
+                            "zona": {
+                                "type": "string"
+                            },
+                            "pais": {
+                                "type": "string"
+                            },
+                            "dominio": {
+                                "type": "string"
+                            },
+                            "subdominio": {
+                                "type": "string"
+                            },
+                            "caminho": {
+                                "type": "string"
+                            },
+                            "approver": {
+                                "type": "string"
+                            },
+                            "filler": {
+                                "type": "string"
+                            },
+                            "timestamp": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {}
+            },
+            "approver": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "approver",
+                            "type": "string",
+                            "value": "@body('Parse_JSON')?['approver']"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "success": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "status",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "approver": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Condition": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "not": {
+                                "equals": [
+                                    "@body('Parse_JSON')?['status']",
+                                    "error"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "actions": {
+                    "SuccessAwnser": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "teams-1"
+                                }
+                            },
+                            "method": "post",
+                            "body": {
+                                "recipient": "@body('Parse_JSON')?['filler']",
+                                "messageBody": "{\n    \"type\": \"AdaptiveCard\",\n    \"body\": [\n        {\n            \"type\": \"TextBlock\",\n            \"size\": \"ExtraLarge\",\n            \"weight\": \"Bolder\",\n            \"text\": \"Deleção de dados DataLake Prod\",\n            \"style\": \"heading\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"A sua solicitação para excluir os dados do path (@{body('Parse_JSON')?['zona']}/@{body('Parse_JSON')?['pais']}/@{body('Parse_JSON')?['dominio']}/@{body('Parse_JSON')?['subdominio']}/@{body('Parse_JSON')?['caminho']}/), terminou, e: \",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"columnHeader\",\n            \"weight\": \"Lighter\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"@{body('Parse_JSON')?['message']}\",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"heading\",\n            \"weight\": \"Bolder\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"Obrigado por contribuir com a limpeza do ambiente! :) \",\n            \"wrap\": true\n        },\n        {\n            \"type\": \"ActionSet\",\n            \"horizontalAlignment\": \"Center\"\n        }\n    ],\n    \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n    \"version\": \"1.4\"\n}"
+                            },
+                            "path": "/v1.0/teams/conversation/adaptivecard/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}"
+                        }
+                    }
+                },
+                "else": {
+                    "actions": {
+                        "FailAwnser": {
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "referenceName": "teams-1"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "recipient": "@body('Parse_JSON')?['filler']",
+                                    "messageBody": "{\n    \"type\": \"AdaptiveCard\",\n    \"body\": [\n        {\n            \"type\": \"TextBlock\",\n            \"size\": \"ExtraLarge\",\n            \"weight\": \"Bolder\",\n            \"text\": \"Deleção de dados DataLake Prod\",\n            \"style\": \"heading\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"A sua solicitação para excluir os dados do path (@{body('Parse_JSON')?['zona']}/@{body('Parse_JSON')?['pais']}/@{body('Parse_JSON')?['dominio']}/@{body('Parse_JSON')?['subdominio']}/@{body('Parse_JSON')?['caminho']}/), terminou, e: \",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"columnHeader\",\n            \"weight\": \"Lighter\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"@{body('Parse_JSON')?['message']}\",\n            \"wrap\": true,\n            \"separator\": true,\n            \"style\": \"heading\",\n            \"weight\": \"Bolder\",\n            \"horizontalAlignment\": \"Center\"\n        },\n        {\n            \"type\": \"TextBlock\",\n            \"text\": \"Por favor, verifique os logs com atenção e tente novamente \",\n            \"wrap\": true\n        },\n        {\n            \"type\": \"ActionSet\",\n            \"horizontalAlignment\": \"Center\"\n        }\n    ],\n    \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n    \"version\": \"1.4\"\n}"
+                                },
+                                "path": "/v1.0/teams/conversation/adaptivecard/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "success": [
+                        "SUCCEEDED"
+                    ]
+                }
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "status": {
+                                "type": "string"
+                            },
+                            "message": {
+                                "type": "string"
+                            },
+                            "zona": {
+                                "type": "string"
+                            },
+                            "pais": {
+                                "type": "string"
+                            },
+                            "dominio": {
+                                "type": "string"
+                            },
+                            "subdominio": {
+                                "type": "string"
+                            },
+                            "caminho": {
+                                "type": "string"
+                            },
+                            "approver": {
+                                "type": "string"
+                            },
+                            "filler": {
+                                "type": "string"
+                            },
+                            "timestamp": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "kind": "Stateful"
+}
